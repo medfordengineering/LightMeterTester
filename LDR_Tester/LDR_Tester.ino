@@ -35,8 +35,8 @@
 #define MAX_ADC_READING 1023
 #define ADC_REF_VOLTAGE 5.0
 #define REF_RESISTANCE 9930
-//#define LUX_CALC_SCALAR           12518931
-//#define LUX_CALC_EXPONENT         -1.405
+#define LUX_CALC_SCALAR 3.36899 * pow(10, 9)
+#define LUX_CALC_EXPONENT -1.56617
 
 int asa = DEFAULT_ASA;
 
@@ -49,15 +49,16 @@ float luxToEv(float lux) {
   return log(lux * asa / CVALUE) / log(2.0);
 }
 
-float ldrRawToLdrRes(float ldrRaw) {  //MAYBE LDR RAW VALUE ALSO CONDENCE THIS FUNCTION
-  float ldrResistance;
-  float resistorVoltage = (float)ldrRaw / MAX_ADC_READING * ADC_REF_VOLTAGE;  //CHECK CAST HERE
-  float ldrVoltage = ADC_REF_VOLTAGE - resistorVoltage;
-  return ldrResistance = ldrVoltage / resistorVoltage * REF_RESISTANCE;
+float ldrRawToLdrRes(float ldrRaw) {  
+
+  float resV = (float)ldrRaw / MAX_ADC_READING * ADC_REF_VOLTAGE;  
+  float ldrV = ADC_REF_VOLTAGE - resV;
+  float ldrRes = ldrV / resV * REF_RESISTANCE;
+  return ldrRes;
 }
 
 float ldrResToLdrLux(float ldrResistance) {
-  return 3.36899 * pow(10, 9) * (pow(ldrResistance, -1.56617));
+  return LUX_CALC_SCALAR * (pow(ldrResistance, LUX_CALC_EXPONENT));
 }
 
 void setup() {
