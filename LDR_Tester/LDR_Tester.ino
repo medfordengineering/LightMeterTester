@@ -27,16 +27,14 @@
 #define EW 30
 #define EH 10
 
-#define RAW_COUNT 50
+#define ADC_COUNT 50
 #define METER_PIN 5
 #define CVALUE 250
 #define CAPTURE_DELAY 10
 #define DEFAULT_ASA 400
-
-// These constants, define values needed for the LDR readings and ADC
 #define MAX_ADC_READING 1023
 #define ADC_REF_VOLTAGE 5.0
-#define REF_RESISTANCE 9930  // measure this for best results
+#define REF_RESISTANCE 9930 
 //#define LUX_CALC_SCALAR           12518931
 //#define LUX_CALC_EXPONENT         -1.405
 
@@ -79,11 +77,11 @@ void loop() {
   float ldrLux;
   uint32_t ldrRaw = 0;
 
-  for (int x = 0; x < RAW_COUNT; x++) {
+  for (int x = 0; x < ADC_COUNT; x++) {
     delay(CAPTURE_DELAY);
     ldrRaw += analogRead(METER_PIN);
   }
-  ldrRaw /= RAW_COUNT;
+  ldrRaw /= ADC_COUNT;
 
 //float rawToLdr(doulbe ldrRaw) {
 
