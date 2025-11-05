@@ -17,7 +17,7 @@
 #define BW 40
 #define BH 20
 
-#define VX BX + 60
+#define VX BX + 80
 #define VY 0
 #define VW 40
 #define VH 20
@@ -27,12 +27,13 @@
 #define EW 30
 #define EH 10
 
+#define RAW_TOTAL 50
 #define METER 5
 
 // These constants, define values needed for the LDR readings and ADC
-#define MAX_ADC_READING           1023
-#define ADC_REF_VOLTAGE           5.0
-#define REF_RESISTANCE            9930  // measure this for best results
+#define MAX_ADC_READING 1023
+#define ADC_REF_VOLTAGE 5.0
+#define REF_RESISTANCE 9930  // measure this for best results
 //#define LUX_CALC_SCALAR           12518931
 //#define LUX_CALC_EXPONENT         -1.405
 
@@ -40,10 +41,11 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, OLED_MOSI, OLED_CLK, OLED_
 
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   if (!display.begin(SSD1306_SWITCHCAPVCC)) {
     Serial.println(F("SSD1306 allocation failed"));
-    while(1);
+    while (1)
+      ;
   }
   display.clearDisplay();
   display.setTextColor(SSD1306_WHITE);
@@ -57,26 +59,28 @@ void loop() {
   float ldrLux;
   uint32_t ldrRaw = 0;
 
-  for (int x = 0; x < 20; x++)
+  for (int x = 0; x < RAW_TOTAL; x++) {
+    delay(10);
     ldrRaw += analogRead(METER);
+  }
 
-  ldrRaw /= 20;
+  ldrRaw /= RAW_TOTAL;
 
- // RESISTOR VOLTAGE_CONVERSION
+  // RESISTOR VOLTAGE_CONVERSION
   // Convert the raw digital data back to the voltage that was measured on the analog pin
   resistorVoltage = (float)ldrRaw / MAX_ADC_READING * ADC_REF_VOLTAGE;
 
   // voltage across the LDR is the 5V supply minus the 5k resistor voltage
   ldrVoltage = ADC_REF_VOLTAGE - resistorVoltage;
-  
+
   // LDR_RESISTANCE_CONVERSION
-  // resistance that the LDR would have for that voltage  
-  ldrResistance = ldrVoltage/resistorVoltage * REF_RESISTANCE;
-  
+  // resistance that the LDR would have for that voltage
+  ldrResistance = ldrVoltage / resistorVoltage * REF_RESISTANCE;
+
   //float volt = a * max_v / 1023;
   //float lux = (volt * (-4000)) + 18000;
 
- //y= 3.36899\times10^{9}\right)\cdot x^{-1.56617}
+  ldrLux = 3.36899 * pow(10, 9) * (pow(ldrResistance, -1.56617));
 
   display.fillRect(BX, BY, BW, BH, SSD1306_BLACK);
   display.setCursor(BX, BY);
@@ -85,9 +89,13 @@ void loop() {
   //display.setCursor(BX, BY + 12);
   //display.println(a);
 
-  //display.fillRect(VX, VY, VW, VH, SSD1306_BLACK);
-  //display.setCursor(VX, VY);
-  //display.println(lux);
+  display.fillRect(VX, VY, VW, VH, SSD1306_BLACK);
+  display.setCursor(VX, VY);
+  display.println(ldrLux);
+
+  Serial.print(ldrResistance);
+  Serial.print('\t');
+  Serial.println(ldrLux);
 
   //display.setCursor(VX, VY+ 12);
   //display.println(a);
