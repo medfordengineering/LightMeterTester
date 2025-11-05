@@ -1,5 +1,6 @@
 #include <SPI.h>
 #include <Wire.h>
+//#include <math.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
@@ -31,7 +32,7 @@
 #define METER_PIN 5
 #define CVALUE 250
 #define CAPTURE_DELAY 10
-#define DEFAULT_ASA 400
+#define DEFAULT_ASA 400.0
 #define MAX_ADC_READING 1023
 #define ADC_REF_VOLTAGE 5.0
 #define REF_RESISTANCE 9930
@@ -49,9 +50,9 @@ float luxToEv(float lux) {
   return log(lux * asa / CVALUE) / log(2.0);
 }
 
-float ldrRawToLdrRes(float ldrRaw) {  
+float ldrRawToLdrRes(float ldrRaw) {
 
-  float resV = (float)ldrRaw / MAX_ADC_READING * ADC_REF_VOLTAGE;  
+  float resV = (float)ldrRaw / MAX_ADC_READING * ADC_REF_VOLTAGE;
   float ldrV = ADC_REF_VOLTAGE - resV;
   float ldrRes = ldrV / resV * REF_RESISTANCE;
   return ldrRes;
@@ -60,6 +61,21 @@ float ldrRawToLdrRes(float ldrRaw) {
 float ldrResToLdrLux(float ldrResistance) {
   return LUX_CALC_SCALAR * (pow(ldrResistance, LUX_CALC_EXPONENT));
 }
+
+float evToShutterSpeed(float ev, float aperture) {
+    float shutterSpeed = (aperture * aperture) / pow(2.0, ev);
+    return 1/shutterSpeed;
+}
+/*
+float shutterSpeed(float ev, float aperture_n, float iso_s) {
+  // First, find EV100
+  //float ev100 = ev - log2(iso_s / 100.0);
+  float ev100 = ev - log(iso_s / 100.0) / log(2);
+  //return log(x) / log(2.0);
+
+  float t = (aperture_n * aperture_n) / pow(2.0, ev100);
+  return t;
+}*/
 
 void setup() {
   Serial.begin(115200);
@@ -88,18 +104,19 @@ void loop() {
   // Convert the raw LDR reading to a resistor value for the LDR
   float ldrRes = ldrRawToLdrRes((float)ldrRaw);
 
-  // Get the lux value based on the resisto
-  //lux = 3.36899 * pow(10, 9) * (pow(ldrResistance, -1.56617));
-
   // Convert the LDR resistance value to lux
   float lux = ldrResToLdrLux(ldrRes);
 
   // Conver the lux value to EV
   float ev = luxToEv(lux);
 
+  //Solve for \(t\): \(t=N^{2}/2^{EV}\) 
+
+  float speed = evToShutterSpeed(ev, 2.8);
+
   display.fillRect(BX, BY, BW, BH, SSD1306_BLACK);
   display.setCursor(BX, BY);
-  display.println(ldrRes);
+  display.println(speed);
 
   //display.setCursor(BX, BY + 12);
   //display.println(a);
