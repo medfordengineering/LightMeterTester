@@ -34,7 +34,7 @@
 #define DEFAULT_ASA 400
 #define MAX_ADC_READING 1023
 #define ADC_REF_VOLTAGE 5.0
-#define REF_RESISTANCE 9930 
+#define REF_RESISTANCE 9930
 //#define LUX_CALC_SCALAR           12518931
 //#define LUX_CALC_EXPONENT         -1.405
 
@@ -42,20 +42,22 @@ int asa = DEFAULT_ASA;
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
 
-double luxToEv(double lux) {
+float luxToEv(float lux) {
   if (lux <= 0) {
     return -INFINITY;  // Throw exception for negative numbers
   }
   return log(lux * asa / CVALUE) / log(2.0);
 }
 
-float rawToLdr(double ldrRaw) {
+float ldrRawToLdrRes(float ldrRaw) {  //MAYBE LDR RAW VALUE ALSO CONDENCE THIS FUNCTION
   float ldrResistance;
-  float resistorVoltage = (float)ldrRaw / MAX_ADC_READING * ADC_REF_VOLTAGE;
-
+  float resistorVoltage = (float)ldrRaw / MAX_ADC_READING * ADC_REF_VOLTAGE;  //CHECK CAST HERE
   float ldrVoltage = ADC_REF_VOLTAGE - resistorVoltage;
-
   return ldrResistance = ldrVoltage / resistorVoltage * REF_RESISTANCE;
+}
+
+float ldrResToLdrLux(float ldrResistance) {
+  return 3.36899 * pow(10, 9) * (pow(ldrResistance, -1.56617));
 }
 
 void setup() {
@@ -72,42 +74,42 @@ void setup() {
 
 void loop() {
 
-  //float resistorVoltage, ldrVoltage;
- // float ldrResistance;
-  float ldrLux;
+  //float lux;
   uint32_t ldrRaw = 0;
 
+  // Get average value for conversion from LDR
   for (int x = 0; x < ADC_COUNT; x++) {
     delay(CAPTURE_DELAY);
     ldrRaw += analogRead(METER_PIN);
   }
   ldrRaw /= ADC_COUNT;
 
-//float rawToLdr(doulbe ldrRaw) {
+  // Convert the raw LDR reading to a resistor value for the LDR
+  float ldrRes = ldrRawToLdrRes((float)ldrRaw);
 
-  float ldrResistance = rawToLdr(ldrRaw);
+  // Get the lux value based on the resisto
+  //lux = 3.36899 * pow(10, 9) * (pow(ldrResistance, -1.56617));
 
-  //float volt = a * max_v / 1023;
-  //float lux = (volt * (-4000)) + 18000;
+  // Convert the LDR resistance value to lux
+  float lux = ldrResToLdrLux(ldrRes);
 
-  ldrLux = 3.36899 * pow(10, 9) * (pow(ldrResistance, -1.56617));
-
-  double ev = luxToEv(ldrLux);
+  // Conver the lux value to EV
+  float ev = luxToEv(lux);
 
   display.fillRect(BX, BY, BW, BH, SSD1306_BLACK);
   display.setCursor(BX, BY);
-  display.println(ldrResistance);
+  display.println(ldrRes);
 
   //display.setCursor(BX, BY + 12);
   //display.println(a);
 
   display.fillRect(VX, VY, VW, VH, SSD1306_BLACK);
   display.setCursor(VX, VY);
-  display.println(ldrLux);
+  display.println(lux);
 
-  Serial.print(ldrResistance);
+  Serial.print(ldrRes);
   Serial.print('\t');
-  Serial.println(ldrLux);
+  Serial.println(lux);
 
   //display.setCursor(VX, VY+ 12);
   //display.println(a);
